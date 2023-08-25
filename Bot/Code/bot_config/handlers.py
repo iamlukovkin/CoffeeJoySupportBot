@@ -5,10 +5,32 @@ from telebot.types import InlineKeyboardMarkup
 from telebot.types import Message
 from telebot.types import CallbackQuery
 
-from .bot import bot, db_path
+from .bot import bot, db_path, password
 from . import repository
 from . import message_text
 from . import functions
+
+
+def cmd_admin_auth(message: Message):
+    user_password = message.text.split('/admin_auth ')[-1]
+    user_id = message.chat.id
+    if user_password == password:
+        repository.update_value(
+            database_path=db_path,
+            table_name='Code_users',
+            search_column='telegram_id',
+            param_to_search=user_id,
+            column_to_change='is_admin',
+            new_value=True
+        )
+        msg_text='Вы зарегистрированы в роли администратора!'
+    else:
+        msg_text='Введен неверный пароль!'
+    bot.send_message(
+        chat_id=user_id,
+        text=msg_text
+    )
+
 
 
 def cmd_start(message: Message):
@@ -191,6 +213,10 @@ def handler():
     bot.register_message_handler(
         callback=cmd_start, 
         commands=['start']
+    )
+    bot.register_message_handler(
+        callback=cmd_admin_auth,
+        commands=['admin_auth']
     )
     bot.register_message_handler(
         callback=send_message,
